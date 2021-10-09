@@ -1,0 +1,48 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nsbench-pv-claim
+spec:
+  storageClassName: longhorn
+  # storageClassName: gp2
+  # storageClassName: local-storage
+  # storageClassName: ibmc-block-bronze
+  # storageClassName: ibmc-block-silver
+  # storageClassName: ibmc-block-gold
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nsbench
+spec:
+  template:
+    spec:
+      containers:
+      - name: nsbench
+        image: moyu6027/nsbench:0.1
+        imagePullPolicy: Always
+        env:
+          - name: NSBENCH_MOUNTPOINT
+            value: /data
+          # - name: NSBENCH_QUICK
+          #   value: "yes"
+          # - name: FIO_SIZE
+          #   value: 1G
+          # - name: FIO_OFFSET_INCREMENT
+          #   value: 256M
+          # - name: FIO_DIRECT
+          #   value: "0"
+        volumeMounts:
+        - name: nsbench-pv
+          mountPath: /data
+      restartPolicy: Never
+      volumes:
+      - name: nsbench-pv
+        persistentVolumeClaim:
+          claimName: nsbench-pv-claim
+  backoffLimit: 4
